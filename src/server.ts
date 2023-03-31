@@ -157,6 +157,22 @@ app.get("/meals", {
   return reply.status(200).send(meals);
 });
 
+app.get("/meals/:id", {
+  preHandler: [CheckUserIdExists]
+}, async (req, reply) => {
+  const { id } = req.params as { id: string };
+
+  const meal = listOfMeals.find((meal) => meal.id === id);
+
+  if (!meal) {
+    return reply.status(404).send({
+      error: "Meal not found",
+    });
+  }
+
+  return reply.status(200).send(meal);
+});
+
 app.listen({
   port: 3333,
 }).then(() => {
