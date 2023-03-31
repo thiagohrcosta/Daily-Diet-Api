@@ -1,4 +1,5 @@
 import fastify from 'fastify';
+
 import { randomUUID } from 'node:crypto'
 import * as zod from 'zod'
 import { CheckUserIdExists } from './middlewares/check-if-id-exists';
@@ -81,7 +82,7 @@ app.post("/users", (req , reply) => {
     };
 
     listOfUsers.push(user);
-    console.log(user)
+    console.log(user);
   }
 
   return reply.status(201).send();
@@ -91,27 +92,29 @@ app.post("/users", (req , reply) => {
 app.post("/meals", {
   preHandler: [CheckUserIdExists]
 }, async (req, reply) => {
+  const createMealSchema = zod.object({
+    name: zod.string().min(3, "Name must be at least 3 characters"),
+    description: zod.string().min(3, "Description must be at least 3 characters"),
+    isOnDiet: zod.boolean(),
+  });
 
-  const { name, description, isOnDiet } = req.body as MealProps;
+  const { name, description, isOnDiet } = createMealSchema.parse(req.body);
+
   const { id } = req.headers as { id: string };
 
-  console.log(name, description, isOnDiet, id)
+  const meal = {
+    id: randomUUID(),
+    name,
+    description,
+    datetime: new Date().toISOString(),
+    isOnDiet,
+    userId: id,
+  };
+  console.log(meal);
 
-  if (name && description && isOnDiet) {
-    const meal = {
-      id: randomUUID(),
-      name,
-      description,
-      datetime: new Date().toISOString(),
-      isOnDiet,
-      userId: id,
-    };
-
-    listOfMeals.push(meal);
-    console.log(listOfMeals)
-  }
-
-  return reply.status(201).send();
+  listOfMeals.push(meal);
+  console.log(listOfMeals)
+  return reply.status(201).send(meal);
 });
 
 app.listen({
