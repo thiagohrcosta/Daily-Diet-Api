@@ -173,6 +173,16 @@ app.get("/meals/:id", {
   return reply.status(200).send(meal);
 });
 
+app.get("/metrics/total", {}, async (req, reply) => {
+  const { id } = req.headers as { id: string };
+
+  const meals = listOfMeals.filter((meal) => meal.userId === id);
+
+  return reply.status(200).send({
+    total: meals.length,
+  });
+});
+
 app.listen({
   port: 3333,
 }).then(() => {
