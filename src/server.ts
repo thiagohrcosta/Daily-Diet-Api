@@ -93,11 +93,42 @@ app.post("/meals", {
     isOnDiet,
     userId: id,
   };
-  console.log(meal);
 
   listOfMeals.push(meal);
-  console.log(listOfMeals)
   return reply.status(201).send(meal);
+});
+
+app.put("/meals/:id", {
+  preHandler: [CheckUserIdExists]
+}, async (req, reply) => {
+  const updateMealSchema = zod.object({
+    name: zod.string().min(3, "Name must be at least 3 characters"),
+    description: zod.string().min(3, "Description must be at least 3 characters"),
+    isOnDiet: zod.boolean(),
+  });
+
+  const { name, description, isOnDiet } = updateMealSchema.parse(req.body);
+
+  const { id } = req.params as { id: string };
+
+  const mealIndex = listOfMeals.findIndex((meal) => meal.id === id);
+
+  if (mealIndex < 0) {
+    return reply.status(404).send({
+      error: "Meal not found",
+    });
+  }
+
+  listOfMeals[mealIndex] = {
+    ...listOfMeals[mealIndex],
+    name,
+    description,
+    isOnDiet,
+    datetime: new Date().toISOString(),
+    userId: id
+  };
+
+  return reply.status(200).send(listOfMeals[mealIndex]);
 });
 
 app.listen({
