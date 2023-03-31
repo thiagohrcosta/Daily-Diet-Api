@@ -13,6 +13,17 @@ interface UserProps {
 
 const listOfUsers: UserProps[] = [];
 
+interface MealProps {
+  id: string;
+  name: string;
+  description: string;
+  datetime: string;
+  isOnDiet: boolean;
+  userId: string;
+}
+
+const listOfMeals: MealProps[] = [];
+
 app.get("/", () => {
   return { hello: "world" };
 });
@@ -70,10 +81,37 @@ app.post("/users", (req , reply) => {
     };
 
     listOfUsers.push(user);
+    console.log(user)
   }
 
   return reply.status(201).send();
 
+});
+
+app.post("/meals", {
+  preHandler: [CheckUserIdExists]
+}, async (req, reply) => {
+
+  const { name, description, isOnDiet } = req.body as MealProps;
+  const { id } = req.headers as { id: string };
+
+  console.log(name, description, isOnDiet, id)
+
+  if (name && description && isOnDiet) {
+    const meal = {
+      id: randomUUID(),
+      name,
+      description,
+      datetime: new Date().toISOString(),
+      isOnDiet,
+      userId: id,
+    };
+
+    listOfMeals.push(meal);
+    console.log(listOfMeals)
+  }
+
+  return reply.status(201).send();
 });
 
 app.listen({
