@@ -39,23 +39,6 @@ app.get("/me", {
   return user;
 });
 
-// app.get("/users", (req, reply) => {
-//   const { id } = req.headers as { id: string };
-
-//   const userHasAnValidId = listOfUsers.some((user) => user.id === id);
-//   console.log(userHasAnValidId);
-
-//   if (!userHasAnValidId) {
-//     return reply.status(400).send(
-//       {
-//         error: "User not found!",
-//       }
-//     );
-//   }
-
-//   return listOfUsers;
-// });
-
 app.post("/users", (req , reply) => {
   const registerUserSchema = zod.object({
     name: zod.string().min(3, "Name must be at least 3 characters"),
