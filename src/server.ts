@@ -131,6 +131,24 @@ app.put("/meals/:id", {
   return reply.status(200).send(listOfMeals[mealIndex]);
 });
 
+app.delete("/meals/:id", {
+  preHandler: [CheckUserIdExists]
+}, async (req, reply) => {
+  const { id } = req.params as { id: string };
+
+  const mealIndex = listOfMeals.findIndex((meal) => meal.id === id);
+
+  if (mealIndex < 0) {
+    return reply.status(404).send({
+      error: "Meal not found",
+    });
+  }
+
+  listOfMeals.splice(mealIndex, 1);
+  console.log(listOfMeals)
+  return reply.status(200).send();
+});
+
 app.listen({
   port: 3333,
 }).then(() => {
