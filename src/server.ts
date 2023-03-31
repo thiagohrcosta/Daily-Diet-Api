@@ -125,7 +125,6 @@ app.put("/meals/:id", {
     description,
     isOnDiet,
     datetime: new Date().toISOString(),
-    userId: id
   };
 
   return reply.status(200).send(listOfMeals[mealIndex]);
@@ -145,8 +144,17 @@ app.delete("/meals/:id", {
   }
 
   listOfMeals.splice(mealIndex, 1);
-  console.log(listOfMeals)
   return reply.status(200).send();
+});
+
+app.get("/meals", {
+  preHandler: [CheckUserIdExists]
+}, async (req, reply) => {
+  const { id } = req.headers as { id: string };
+
+  const meals = listOfMeals.filter((meal) => meal.userId === id);
+
+  return reply.status(200).send(meals);
 });
 
 app.listen({
