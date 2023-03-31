@@ -18,7 +18,8 @@ interface MealProps {
   id: string;
   name: string;
   description: string;
-  datetime: string;
+  date: string;
+  time: string;
   isOnDiet: boolean;
   userId: string;
 }
@@ -78,10 +79,12 @@ app.post("/meals", {
   const createMealSchema = zod.object({
     name: zod.string().min(3, "Name must be at least 3 characters"),
     description: zod.string().min(3, "Description must be at least 3 characters"),
+    date: zod.string().min(6, "Date must be at least 6 characters"),
+    time: zod.string().min(4, "Time must be at least 4 characters"),
     isOnDiet: zod.boolean(),
   });
 
-  const { name, description, isOnDiet } = createMealSchema.parse(req.body);
+  const { name, description, date, time, isOnDiet } = createMealSchema.parse(req.body);
 
   const { id } = req.headers as { id: string };
 
@@ -89,7 +92,8 @@ app.post("/meals", {
     id: randomUUID(),
     name,
     description,
-    datetime: new Date().toISOString(),
+    date,
+    time,
     isOnDiet,
     userId: id,
   };
@@ -104,10 +108,12 @@ app.put("/meals/:id", {
   const updateMealSchema = zod.object({
     name: zod.string().min(3, "Name must be at least 3 characters"),
     description: zod.string().min(3, "Description must be at least 3 characters"),
+    date: zod.string().min(6, "Date must be at least 6 characters"),
+    time: zod.string().min(4, "Time must be at least 4 characters"),
     isOnDiet: zod.boolean(),
   });
 
-  const { name, description, isOnDiet } = updateMealSchema.parse(req.body);
+  const { name, description, time, date, isOnDiet } = updateMealSchema.parse(req.body);
 
   const { id } = req.params as { id: string };
 
@@ -124,7 +130,8 @@ app.put("/meals/:id", {
     name,
     description,
     isOnDiet,
-    datetime: new Date().toISOString(),
+    date,
+    time,
   };
 
   return reply.status(200).send(listOfMeals[mealIndex]);
@@ -176,10 +183,37 @@ app.get("/meals/:id", {
 app.get("/metrics/total", {}, async (req, reply) => {
   const { id } = req.headers as { id: string };
 
-  const meals = listOfMeals.filter((meal) => meal.userId === id);
+  let meals = listOfMeals.filter((meal) => meal.userId === id);
+  // filter order by date
+  meals = meals.sort((a, b) => {
+    const dateA = new Date(a.date);
+    const dateB = new Date(b.date);
+    return dateA.getTime() - dateB.getTime();
+  });
+
+  function calculator() {
+    let sequence = 0;
+    let maxSequence = 0;
+    for (let i = 0; i < meals.length; i++) {
+      if (meals[i].isOnDiet) {
+        sequence++;
+        if (sequence > maxSequence) {
+          maxSequence = sequence;
+        }
+      } else {
+        sequence = 0;
+      }
+    }
+    return maxSequence;
+  }
 
   return reply.status(200).send({
     total: meals.length,
+    onDiet: meals.filter((meal) => meal.isOnDiet === true).length,
+    onDietPercentage: (meals.filter((meal) => meal.isOnDiet === true).length / meals.length) * 100,
+    notOnDiet: meals.filter((meal) => meal.isOnDiet === false).length,
+    notOnDietPercentage: (meals.filter((meal) => meal.isOnDiet === false).length / meals.length) * 100,
+    mealsSequenceOnDiet: calculator(),
   });
 });
 
