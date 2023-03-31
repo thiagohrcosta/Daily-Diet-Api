@@ -5,7 +5,6 @@ export async function CheckUserIdExists(
   reply: FastifyReply,
 ) {
   const { id } = request.headers as { id: string }
-  console.log(id)
 
   if (!id) {
     return reply.status(401).send({
@@ -13,4 +12,5 @@ export async function CheckUserIdExists(
     })
   }
 
+  return;
 }
