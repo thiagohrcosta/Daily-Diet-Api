@@ -1,6 +1,7 @@
 import fastify from 'fastify';
 import { randomUUID } from 'node:crypto'
 import * as zod from 'zod'
+import { CheckUserIdExists } from './middlewares/check-if-id-exists';
 
 const app = fastify();
 
@@ -14,6 +15,16 @@ const listOfUsers: UserProps[] = [];
 
 app.get("/", () => {
   return { hello: "world" };
+});
+
+app.get("/me", {
+  preHandler: [CheckUserIdExists]
+}, (req, reply) => {
+  const { id } = req.headers as { id: string };
+
+  const user = listOfUsers.find((user) => user.id === id);
+
+  return user;
 });
 
 // app.get("/users", (req, reply) => {
@@ -59,10 +70,9 @@ app.post("/users", (req , reply) => {
     };
 
     listOfUsers.push(user);
-    return reply.status(201).send(user);
-
-
   }
+
+  return reply.status(201).send();
 
 });
 
