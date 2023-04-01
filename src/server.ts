@@ -27,10 +27,6 @@ interface MealProps {
 
 const listOfMeals: MealProps[] = [];
 
-app.get("/", () => {
-  return { hello: "world" };
-});
-
 app.get("/me", {
   preHandler: [CheckUserIdExists]
 }, (req, reply) => {
@@ -181,9 +177,6 @@ app.delete("/meals/:id", {
     });
   }
 
-  console.log(findUser)
-  console.log(userId)
-
   if (findMeal?.userId !== userId) {
     return reply.status(401).send({
       error: "Unauthorized",
@@ -203,9 +196,9 @@ app.delete("/meals/:id", {
 app.get("/meals", {
   preHandler: [CheckUserIdExists]
 }, async (req, reply) => {
-  const { id } = req.headers as { id: string };
+  const { id: userId } = req.headers as { id: string };
 
-  const meals = listOfMeals.filter((meal) => meal.userId === id);
+  const meals = listOfMeals.filter((meal) => meal.userId === userId);
 
   return reply.status(200).send(meals);
 });
