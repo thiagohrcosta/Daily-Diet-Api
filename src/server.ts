@@ -56,11 +56,9 @@ app.post("/users", (req , reply) => {
   const userAlreadyExists = listOfUsers.some((user) => user.email === email);
 
   if (userAlreadyExists) {
-    return reply.status(400).send(
-      {
-        error: "User already exists!",
-      }
-    );
+    return reply.status(400).send({
+      error: "User already exists",
+    });
   }
 
   if (name && email) {
@@ -71,7 +69,7 @@ app.post("/users", (req , reply) => {
     };
 
     listOfUsers.push(user);
-    console.log(user);
+    console.log(listOfUsers);
   }
 
   return reply.status(201).send();
@@ -92,6 +90,14 @@ app.post("/meals", {
   const { name, description, date, time, isOnDiet } = createMealSchema.parse(req.body);
 
   const { id } = req.headers as { id: string };
+
+  const userExists = listOfUsers.some((user) => user.id === id);
+
+  if (!userExists) {
+    return reply.status(404).send({
+      error: "User not found",
+    });
+  }
 
   const meal = {
     id: randomUUID(),
@@ -120,9 +126,26 @@ app.put("/meals/:id", {
 
   const { name, description, time, date, isOnDiet } = updateMealSchema.parse(req.body);
 
-  const { id } = req.params as { id: string };
+  const { id: userId } = req.headers as { id: string };
+  const { id: mealId } = req.params as { id: string };
 
-  const mealIndex = listOfMeals.findIndex((meal) => meal.id === id);
+  const mealIndex = listOfMeals.findIndex((meal) => meal.id === mealId);
+
+  const findUser = listOfUsers.find((user) => user.id === userId);
+  console.log(findUser)
+  console.log(mealIndex)
+
+  if (findUser === undefined) {
+    return reply.status(404).send({
+      error: "User not found",
+    });
+  }
+
+  if (findUser.id !== userId) {
+    return reply.status(401).send({
+      error: "Unauthorized",
+    });
+  }
 
   if (mealIndex < 0) {
     return reply.status(404).send({
@@ -200,6 +223,20 @@ app.get("/metrics/total", {}, async (req, reply) => {
   const { id } = req.headers as { id: string };
 
   let meals = listOfMeals.filter((meal) => meal.userId === id);
+
+  let userExists = listOfUsers.find((user) => user.id === id);
+
+  if (!userExists) {
+    return reply.status(404).send({
+      error: "User not found",
+    });
+  }
+
+  if(meals.length === 0) {
+    return reply.status(402).send({
+      error: "No meals found",
+    })
+  }
   // filter order by date
   meals = meals.sort((a, b) => {
     const dateA = new Date(a.date);
