@@ -132,8 +132,6 @@ app.put("/meals/:id", {
   const mealIndex = listOfMeals.findIndex((meal) => meal.id === mealId);
 
   const findUser = listOfUsers.find((user) => user.id === userId);
-  console.log(findUser)
-  console.log(mealIndex)
 
   if (findUser === undefined) {
     return reply.status(404).send({
@@ -168,29 +166,38 @@ app.put("/meals/:id", {
 app.delete("/meals/:id", {
   preHandler: [CheckUserIdExists]
 }, async (req, reply) => {
-  const { id } = req.params as { id: string };
+  const { id: userId } = req.headers as { id: string };
+  const { id: mealId } = req.params as { id: string };
 
+  const mealIndex = listOfMeals.findIndex((meal) => meal.id === mealId);
 
-  const mealIndex = listOfMeals.findIndex((meal) => meal.id === id);
+  const findMeal = listOfMeals.find((meal) => meal.id === mealId);
 
-  const findMeal = listOfMeals.find((meal) => meal.id === id);
+  const findUser = listOfUsers.find((user) => user.id === userId);
 
-  console.log(id == findMeal?.userId)
+  if (findUser === undefined) {
+    return reply.status(404).send({
+      error: "User not found",
+    });
+  }
 
-  if (findMeal?.userId !== id) {
+  console.log(findUser)
+  console.log(userId)
+
+  if (findMeal?.userId !== userId) {
     return reply.status(401).send({
       error: "Unauthorized",
     });
-  } else {
-    if (mealIndex < 0) {
-      return reply.status(404).send({
-        error: "Meal not found",
-      });
-    }
+  }
+ 
+  if (mealIndex < 0) {
+    return reply.status(404).send({
+      error: "Meal not found",
+    });
+  }
   
     listOfMeals.splice(mealIndex, 1);
     return reply.status(200).send();
-  }
 });
 
 app.get("/meals", {
