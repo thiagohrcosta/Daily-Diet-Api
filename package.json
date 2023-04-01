@@ -6,10 +6,12 @@
   "dependencies": {
     "@fastify/cookie": "^8.3.0",
     "fastify": "^4.15.0",
+    "knex": "^2.4.2",
+    "sqlite3": "^5.1.6",
     "zod": "^3.21.4"
   },
   "scripts": {
-    "dev": "ts-node src/server.ts"
+    "dev": "tsx watch ./src/server.ts"
   },
   "devDependencies": {
     "@types/node": "^18.15.11",

@@ -3,6 +3,7 @@ import fastify from 'fastify';
 import { randomUUID } from 'node:crypto'
 import * as zod from 'zod'
 import { CheckUserIdExists } from './middlewares/check-if-id-exists';
+import { knex } from './database';
 
 const app = fastify();
 
@@ -39,6 +40,10 @@ app.get("/me", {
 
   return user;
 });
+
+app.get("/test", async() => {
+  const table = await knex('sqlite_schema').select('*');
+})
 
 app.post("/users", (req , reply) => {
   const registerUserSchema = zod.object({
@@ -142,16 +147,27 @@ app.delete("/meals/:id", {
 }, async (req, reply) => {
   const { id } = req.params as { id: string };
 
+
   const mealIndex = listOfMeals.findIndex((meal) => meal.id === id);
 
-  if (mealIndex < 0) {
-    return reply.status(404).send({
-      error: "Meal not found",
-    });
-  }
+  const findMeal = listOfMeals.find((meal) => meal.id === id);
 
-  listOfMeals.splice(mealIndex, 1);
-  return reply.status(200).send();
+  console.log(id == findMeal?.userId)
+
+  if (findMeal?.userId !== id) {
+    return reply.status(401).send({
+      error: "Unauthorized",
+    });
+  } else {
+    if (mealIndex < 0) {
+      return reply.status(404).send({
+        error: "Meal not found",
+      });
+    }
+  
+    listOfMeals.splice(mealIndex, 1);
+    return reply.status(200).send();
+  }
 });
 
 app.get("/meals", {
