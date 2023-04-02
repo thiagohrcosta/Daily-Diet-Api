@@ -4,6 +4,7 @@ import crypto from 'node:crypto'
 import * as zod from 'zod'
 import { CheckUserIdExists } from './middlewares/check-if-id-exists';
 import { knex } from './database';
+import { CheckIfUserIsAuthorized } from './middlewares/check-if-user-is-authorized';
 
 const app = fastify();
 
@@ -35,22 +36,21 @@ interface UserProps {
 
 app.get("/me", {
   preHandler: [CheckUserIdExists]
-}, (req, reply) => {
+}, async (req, reply) => {
   const { id } = req.headers as { id: string };
 
-  const user = knex('users').where('id', id).first();
-  console.log(user)
-  if(!user) {
-    return reply.status(404).send({
-      error: "User not found",
-    });
-  }
+  const user = await knex('users').where('id', id).first();
 
-  return reply.status(200).send(user);
+  return reply.status(200).send({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+  });
 });
 
-app.get("/test", async() => {
-  const table = await knex('sqlite_schema').select('*');
+app.get("/users", async(req, reply) => {
+  const users = await knex('users').select('*');
+  return reply.status(200).send(users);
 })
 
 app.post("/users", async (req , reply) => {
@@ -99,26 +99,23 @@ app.post("/meals", {
 
   const { id } = req.headers as { id: string };
 
-  const userExists = listOfUsers.some((user) => user.id === id);
-
-  if (!userExists) {
-    return reply.status(404).send({
-      error: "User not found",
+  try {
+    const meal = await knex('meals').insert({
+      id: crypto.randomUUID(),
+      name,
+      description,
+      date,
+      time,
+      isOnDiet,
+      user_id: id,
+    });
+    return reply.status(201).send()
+  } catch (error) {
+    console.log(error)
+    return reply.status(400).send({
+      error: "Unexpected error while creating new meal",
     });
   }
-
-  const meal = {
-    id: crypto.randomUUID(),
-    name,
-    description,
-    date,
-    time,
-    isOnDiet,
-    userId: id,
-  };
-
-  listOfMeals.push(meal);
-  return reply.status(201).send(meal);
 });
 
 app.put("/meals/:id", {
@@ -210,17 +207,19 @@ app.get("/meals", {
 }, async (req, reply) => {
   const { id: userId } = req.headers as { id: string };
 
-  const meals = listOfMeals.filter((meal) => meal.userId === userId);
+  const meals = await knex('meals').where('user_id', userId).select('*');
 
-  return reply.status(200).send(meals);
+  return reply.status(200).send({
+    meals,
+  });
 });
 
 app.get("/meals/:id", {
-  preHandler: [CheckUserIdExists]
+  preHandler: [CheckUserIdExists, CheckIfUserIsAuthorized]
 }, async (req, reply) => {
   const { id } = req.params as { id: string };
 
-  const meal = listOfMeals.find((meal) => meal.id === id);
+  const meal = await knex('meals').where('id', id).select('*');
 
   if (!meal) {
     return reply.status(404).send({
