@@ -1,6 +1,6 @@
 import fastify from 'fastify';
 
-import { randomUUID } from 'node:crypto'
+import crypto from 'node:crypto'
 import * as zod from 'zod'
 import { CheckUserIdExists } from './middlewares/check-if-id-exists';
 import { knex } from './database';
@@ -27,21 +27,33 @@ interface MealProps {
 
 const listOfMeals: MealProps[] = [];
 
+interface UserProps {
+  id: string;
+  name: string;
+  email: string;
+}
+
 app.get("/me", {
   preHandler: [CheckUserIdExists]
 }, (req, reply) => {
   const { id } = req.headers as { id: string };
 
-  const user = listOfUsers.find((user) => user.id === id);
+  const user = knex('users').where('id', id).first();
+  console.log(user)
+  if(!user) {
+    return reply.status(404).send({
+      error: "User not found",
+    });
+  }
 
-  return user;
+  return reply.status(200).send(user);
 });
 
 app.get("/test", async() => {
   const table = await knex('sqlite_schema').select('*');
 })
 
-app.post("/users", (req , reply) => {
+app.post("/users", async (req , reply) => {
   const registerUserSchema = zod.object({
     name: zod.string().min(3, "Name must be at least 3 characters"),
     email: zod.string().email("Invalid email"),
@@ -49,7 +61,8 @@ app.post("/users", (req , reply) => {
 
   const { name, email } = registerUserSchema.parse(req.body);
 
-  const userAlreadyExists = listOfUsers.some((user) => user.email === email);
+  const userAlreadyExists = await knex('users').where('email', email).first();
+  console.log(userAlreadyExists)
 
   if (userAlreadyExists) {
     return reply.status(400).send({
@@ -57,19 +70,18 @@ app.post("/users", (req , reply) => {
     });
   }
 
-  if (name && email) {
-    const user = {
-      id: randomUUID(),
+  try {
+    const user:UserProps = await knex('users').insert({
+      id: crypto.randomUUID(),
       name,
       email,
-    };
-
-    listOfUsers.push(user);
-    console.log(listOfUsers);
+    }).returning(['id', 'email']).into('users');
+    return reply.status(201).send(user);
+  } catch (error) {
+    return reply.status(400).send({
+      error: "Unexpected error while creating new user",
+    });
   }
-
-  return reply.status(201).send();
-
 });
 
 app.post("/meals", {
@@ -96,7 +108,7 @@ app.post("/meals", {
   }
 
   const meal = {
-    id: randomUUID(),
+    id: crypto.randomUUID(),
     name,
     description,
     date,
