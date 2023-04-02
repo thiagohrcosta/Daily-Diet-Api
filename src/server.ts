@@ -107,10 +107,11 @@ app.post("/meals", {
       date,
       time,
       isOnDiet,
-      userId: id,
+      user_id: id,
     });
     return reply.status(201).send()
   } catch (error) {
+    console.log(error)
     return reply.status(400).send({
       error: "Unexpected error while creating new meal",
     });
