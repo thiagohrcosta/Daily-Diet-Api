@@ -64,8 +64,7 @@ app.post("/users", (req , reply) => {
       email,
     };
 
-    listOfUsers.push(user);
-    console.log(listOfUsers);
+    knex('users').insert(user);
   }
 
   return reply.status(201).send();
