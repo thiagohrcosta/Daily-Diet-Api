@@ -1,5 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify'
-import knex from 'knex';
+import { knex } from '../database'
 
 export async function CheckIfUserIsAuthorized(
   request: FastifyRequest,

@@ -36,18 +36,16 @@ interface UserProps {
 
 app.get("/me", {
   preHandler: [CheckUserIdExists]
-}, (req, reply) => {
+}, async (req, reply) => {
   const { id } = req.headers as { id: string };
 
-  const user = knex('users').where('id', id).first();
-  console.log(user)
-  if(!user) {
-    return reply.status(404).send({
-      error: "User not found",
-    });
-  }
+  const user = await knex('users').where('id', id).first();
 
-  return reply.status(200).send(user);
+  return reply.status(200).send({
+    id: user.id,
+    name: user.name,
+    email: user.email,
+  });
 });
 
 app.get("/users", async(req, reply) => {
