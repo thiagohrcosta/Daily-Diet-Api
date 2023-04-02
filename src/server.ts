@@ -119,7 +119,7 @@ app.post("/meals", {
 });
 
 app.put("/meals/:id", {
-  preHandler: [CheckUserIdExists]
+  preHandler: [CheckUserIdExists, CheckIfUserIsAuthorized]
 }, async (req, reply) => {
   const updateMealSchema = zod.object({
     name: zod.string().min(3, "Name must be at least 3 characters"),
@@ -131,41 +131,33 @@ app.put("/meals/:id", {
 
   const { name, description, time, date, isOnDiet } = updateMealSchema.parse(req.body);
 
-  const { id: userId } = req.headers as { id: string };
   const { id: mealId } = req.params as { id: string };
 
-  const mealIndex = listOfMeals.findIndex((meal) => meal.id === mealId);
+  // const mealIndex = listOfMeals.findIndex((meal) => meal.id === mealId);
+  const meal = await knex('meals').where('id', mealId).first();
 
-  const findUser = listOfUsers.find((user) => user.id === userId);
-
-  if (findUser === undefined) {
-    return reply.status(404).send({
-      error: "User not found",
-    });
-  }
-
-  if (findUser.id !== userId) {
-    return reply.status(401).send({
-      error: "Unauthorized",
-    });
-  }
-
-  if (mealIndex < 0) {
+  if (!meal) {
     return reply.status(404).send({
       error: "Meal not found",
     });
   }
 
-  listOfMeals[mealIndex] = {
-    ...listOfMeals[mealIndex],
-    name,
-    description,
-    isOnDiet,
-    date,
-    time,
-  };
+  // update meal with knex on database
 
-  return reply.status(200).send(listOfMeals[mealIndex]);
+  try {
+    await knex('meals').where('id', mealId).update({
+      name,
+      description,
+      date,
+      time,
+      isOnDiet,
+    });
+    return reply.status(200).send()
+  } catch (error) {
+    return reply.status(400).send({
+      error: "Unexpected error while updating meal",
+    });
+  }
 });
 
 app.delete("/meals/:id", {
