@@ -207,9 +207,11 @@ app.get("/meals", {
 }, async (req, reply) => {
   const { id: userId } = req.headers as { id: string };
 
-  const meals = listOfMeals.filter((meal) => meal.userId === userId);
+  const meals = await knex('meals').where('user_id', userId).select('*');
 
-  return reply.status(200).send(meals);
+  return reply.status(200).send({
+    meals,
+  });
 });
 
 app.get("/meals/:id", {
