@@ -48,10 +48,10 @@ app.get("/me", {
   });
 });
 
-app.get("/users", async(req, reply) => {
-  const users = await knex('users').select('*');
-  return reply.status(200).send(users);
-})
+// app.get("/users", async(req, reply) => {
+//   const users = await knex('users').select('*');
+//   return reply.status(200).send(users);
+// })
 
 app.post("/users", async (req , reply) => {
   const registerUserSchema = zod.object({
