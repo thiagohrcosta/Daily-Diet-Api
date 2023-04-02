@@ -133,7 +133,6 @@ app.put("/meals/:id", {
 
   const { id: mealId } = req.params as { id: string };
 
-  // const mealIndex = listOfMeals.findIndex((meal) => meal.id === mealId);
   const meal = await knex('meals').where('id', mealId).first();
 
   if (!meal) {
@@ -141,8 +140,6 @@ app.put("/meals/:id", {
       error: "Meal not found",
     });
   }
-
-  // update meal with knex on database
 
   try {
     await knex('meals').where('id', mealId).update({
