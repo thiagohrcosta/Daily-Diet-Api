@@ -161,37 +161,26 @@ app.put("/meals/:id", {
 });
 
 app.delete("/meals/:id", {
-  preHandler: [CheckUserIdExists]
+  preHandler: [CheckUserIdExists, CheckIfUserIsAuthorized]
 }, async (req, reply) => {
-  const { id: userId } = req.headers as { id: string };
   const { id: mealId } = req.params as { id: string };
 
-  const mealIndex = listOfMeals.findIndex((meal) => meal.id === mealId);
+  const meal = await knex('meals').where('id', mealId).first();
 
-  const findMeal = listOfMeals.find((meal) => meal.id === mealId);
-
-  const findUser = listOfUsers.find((user) => user.id === userId);
-
-  if (findUser === undefined) {
-    return reply.status(404).send({
-      error: "User not found",
-    });
-  }
-
-  if (findMeal?.userId !== userId) {
-    return reply.status(401).send({
-      error: "Unauthorized",
-    });
-  }
- 
-  if (mealIndex < 0) {
+  if (!meal) {
     return reply.status(404).send({
       error: "Meal not found",
     });
   }
-  
-    listOfMeals.splice(mealIndex, 1);
+
+  try {
+    await knex('meals').where('id', mealId).del();
     return reply.status(200).send();
+  } catch (error) {
+    return reply.status(400).send({
+      error: "Unexpected error while deleting meal",
+    });
+  }
 });
 
 app.get("/meals", {
