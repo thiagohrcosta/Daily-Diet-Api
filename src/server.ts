@@ -215,11 +215,11 @@ app.get("/meals", {
 });
 
 app.get("/meals/:id", {
-  preHandler: [CheckUserIdExists]
+  preHandler: [CheckUserIdExists, CheckIfUserIsAuthorized]
 }, async (req, reply) => {
   const { id } = req.params as { id: string };
 
-  const meal = listOfMeals.find((meal) => meal.id === id);
+  const meal = await knex('meals').where('id', id).select('*');
 
   if (!meal) {
     return reply.status(404).send({
