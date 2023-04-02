@@ -211,18 +211,12 @@ app.get("/meals/:id", {
   return reply.status(200).send(meal);
 });
 
-app.get("/metrics/total", {}, async (req, reply) => {
-  const { id } = req.headers as { id: string };
+app.get("/metrics/total", {
+  preHandler: [CheckUserIdExists]
+}, async (req, reply) => {
+  const { id: userId } = req.headers as { id: string };
 
-  let meals = listOfMeals.filter((meal) => meal.userId === id);
-
-  let userExists = listOfUsers.find((user) => user.id === id);
-
-  if (!userExists) {
-    return reply.status(404).send({
-      error: "User not found",
-    });
-  }
+  const meals = await knex('meals').where('user_id', userId).select('*');
 
   if(meals.length === 0) {
     return reply.status(402).send({
@@ -230,7 +224,7 @@ app.get("/metrics/total", {}, async (req, reply) => {
     })
   }
   // filter order by date
-  meals = meals.sort((a, b) => {
+  meals.sort((a, b) => {
     const dateA = new Date(a.date);
     const dateB = new Date(b.date);
     return dateA.getTime() - dateB.getTime();
