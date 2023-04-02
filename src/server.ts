@@ -4,6 +4,7 @@ import crypto from 'node:crypto'
 import * as zod from 'zod'
 import { CheckUserIdExists } from './middlewares/check-if-id-exists';
 import { knex } from './database';
+import { CheckIfUserIsAuthorized } from './middlewares/check-if-user-is-authorized';
 
 const app = fastify();
 
@@ -49,8 +50,9 @@ app.get("/me", {
   return reply.status(200).send(user);
 });
 
-app.get("/test", async() => {
-  const table = await knex('sqlite_schema').select('*');
+app.get("/users", async(req, reply) => {
+  const users = await knex('users').select('*');
+  return reply.status(200).send(users);
 })
 
 app.post("/users", async (req , reply) => {
@@ -99,26 +101,22 @@ app.post("/meals", {
 
   const { id } = req.headers as { id: string };
 
-  const userExists = listOfUsers.some((user) => user.id === id);
-
-  if (!userExists) {
-    return reply.status(404).send({
-      error: "User not found",
+  try {
+    const meal = await knex('meals').insert({
+      id: crypto.randomUUID(),
+      name,
+      description,
+      date,
+      time,
+      isOnDiet,
+      userId: id,
+    });
+    return reply.status(201).send()
+  } catch (error) {
+    return reply.status(400).send({
+      error: "Unexpected error while creating new meal",
     });
   }
-
-  const meal = {
-    id: crypto.randomUUID(),
-    name,
-    description,
-    date,
-    time,
-    isOnDiet,
-    userId: id,
-  };
-
-  listOfMeals.push(meal);
-  return reply.status(201).send(meal);
 });
 
 app.put("/meals/:id", {

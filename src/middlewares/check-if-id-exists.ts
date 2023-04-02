@@ -1,4 +1,5 @@
 import { FastifyReply, FastifyRequest } from 'fastify'
+import knex from 'knex';
 
 export async function CheckUserIdExists(
   request: FastifyRequest,
@@ -6,9 +7,11 @@ export async function CheckUserIdExists(
 ) {
   const { id } = request.headers as { id: string }
 
-  if (!id) {
+  const userExists = await knex('users').where({ id }).first()
+
+  if (!userExists) {
     return reply.status(401).send({
-      error: 'Unauthorized',
+      error: 'User not found',
     })
   }
 
